@@ -21,7 +21,9 @@ namespace day_2
                 passwordsWithPolicies.Add(PasswordWithPolicy.FromGroupCollection(match.Groups));
             }
 
-            Console.WriteLine(passwordsWithPolicies.Where(pwp => pwp.PasswordIsValid()).Count());
+            Console.WriteLine(passwordsWithPolicies.Where(pwp => pwp.PasswordIsValid_Part1()).Count());
+
+            Console.WriteLine(passwordsWithPolicies.Where(pwp => pwp.PasswordIsValid_Part2()).Count());
         }
     }
 }
