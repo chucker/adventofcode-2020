@@ -16,11 +16,11 @@ namespace day_3
 
             int trees = 0;
 
-            while (position.Y <= lines.Length)
+            while (position.Y < lines.Length)
             {
-                // BUG: need to wrap around horizontally
+                string line = lines[position.Y];
 
-                if (lines[position.Y][position.X] == TreeChar)
+                if (line[position.X % line.Length] == TreeChar)
                     trees++;
 
                 position = (position.X + 3, position.Y + 1);
