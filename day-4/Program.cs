@@ -36,7 +36,7 @@ namespace day_4
                     continue;
                 }
 
-                currentRawPassport += line;
+                currentRawPassport += " " + line;
             }
 
             // if the file ends without an empty line, don't forget the last item
