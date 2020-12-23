@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace day_4
 {
@@ -13,10 +14,12 @@ namespace day_4
     }
     public struct CmHeight : IHeight
     {
+        [Range(150, 193)]
         public int Value { get; set; }
     }
     public struct InHeight : IHeight
     {
+        [Range(59, 76)]
         public int Value { get; set; }
     }
 
@@ -44,27 +47,30 @@ namespace day_4
 
     public class Passport
     {
-        // TODO: validation rules
-
         [SerializedAs("byr")]
+        [Range(1920, 2002)]
         public int? BirthYear { get; private set; }
 
         [SerializedAs("iyr")]
+        [Range(2010, 2020)]
         public int? IssueYear { get; private set; }
 
         [SerializedAs("eyr")]
+        [Range(2020, 2030)]
         public int? ExpirationYear { get; private set; }
 
         [SerializedAs("hgt")]
         public IHeight? Height { get; private set; }
 
         [SerializedAs("hcl")]
+        [Range(0, 16777215)]
         public int? HairColor { get; private set; }
 
         [SerializedAs("ecl")]
         public EyeColor? EyeColor { get; private set; }
 
         [SerializedAs("pid")]
+        [StringLength(9)]
         public string? PassportId { get; private set; }
 
         [SerializedAs("cid")]
@@ -174,7 +180,13 @@ namespace day_4
 
             // NOTE: cid is _not_ mandatory. Let's ignore it.
 
-            // TODO: check ranges
+            var validationContext = new ValidationContext(this);
+            var validationResults = new List<ValidationResult>();
+
+            // CHECK are we validating IHeight yet?
+
+            if (!Validator.TryValidateObject(this, validationContext, validationResults, true))
+                return false;
 
             return true;
         }
