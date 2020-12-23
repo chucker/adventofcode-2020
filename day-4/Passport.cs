@@ -70,7 +70,7 @@ namespace day_4
         public EyeColor? EyeColor { get; private set; }
 
         [SerializedAs("pid")]
-        [StringLength(9)]
+        [StringLength(9, MinimumLength = 9)]
         public string? PassportId { get; private set; }
 
         [SerializedAs("cid")]
