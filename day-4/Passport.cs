@@ -180,12 +180,16 @@ namespace day_4
 
             // NOTE: cid is _not_ mandatory. Let's ignore it.
 
-            var validationContext = new ValidationContext(this);
+            var passportValidationContext = new ValidationContext(this);
+
             var validationResults = new List<ValidationResult>();
 
-            // CHECK are we validating IHeight yet?
+            if (!Validator.TryValidateObject(this, passportValidationContext, validationResults, true))
+                return false;
 
-            if (!Validator.TryValidateObject(this, validationContext, validationResults, true))
+            var heightValidationContext = new ValidationContext(Height);
+
+            if (!Validator.TryValidateObject(Height, heightValidationContext, validationResults, true))
                 return false;
 
             return true;
