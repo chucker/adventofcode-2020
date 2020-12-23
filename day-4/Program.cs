@@ -11,7 +11,7 @@ namespace day_4
     {
         static async Task Main(string[] args)
         {
-            var rawPassports =             await ReadRawPassportData();
+            var rawPassports = await ReadRawPassportData();
 
             var parsedPassports = new List<Passport>();
 
@@ -21,7 +21,9 @@ namespace day_4
                     parsedPassports.Add(passport);
             }
 
-            Console.WriteLine($"Raw passports: {rawPassports.Count}; parsed: {parsedPassports.Count}; valid: {parsedPassports.Where(p => p.IsValid()).Count()}");
+            var validPassports = parsedPassports.Where(p => p.IsValid()).ToList();
+
+            Console.WriteLine($"Raw passports: {rawPassports.Count}; parsed: {parsedPassports.Count}; valid: {validPassports.Count}");
         }
 
         private static async Task<List<string>> ReadRawPassportData()

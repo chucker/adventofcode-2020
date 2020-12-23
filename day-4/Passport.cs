@@ -1,33 +1,74 @@
 ﻿using System;
+using System.Reflection;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 namespace day_4
 {
     public interface IHeight
     {
-        public int Value { get; }
+        public int Value { get; set; }
     }
     public struct CmHeight : IHeight
     {
-        public int Value { get; private set; }
+        public int Value { get; set; }
     }
     public struct InHeight : IHeight
     {
-        public int Value { get; private set; }
+        public int Value { get; set; }
+    }
+
+    public enum EyeColor
+    {
+        amb,
+        blu,
+        brn,
+        gry,
+        grn,
+        hzl,
+        oth
+    }
+
+    [AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
+    public sealed class SerializedAsAttribute : Attribute
+    {
+        public string InternalName { get; }
+
+        public SerializedAsAttribute(string internalName)
+        {
+            InternalName = internalName;
+        }
     }
 
     public class Passport
     {
-        public int? byr { get; private set; }
-        public int? iyr { get; private set; }
-        public int? eyr { get; private set; }
-        public IHeight? hgt { get; private set; }
-        public string? hcl { get; private set; }
-        public string? ecl { get; private set; }
-        public string? pid { get; private set; }
-        public string? cid { get; private set; }
+        // TODO: validation rules
+
+        [SerializedAs("byr")]
+        public int? BirthYear { get; private set; }
+
+        [SerializedAs("iyr")]
+        public int? IssueYear { get; private set; }
+
+        [SerializedAs("eyr")]
+        public int? ExpirationYear { get; private set; }
+
+        [SerializedAs("hgt")]
+        public IHeight? Height { get; private set; }
+
+        [SerializedAs("hcl")]
+        public int? HairColor { get; private set; }
+
+        [SerializedAs("ecl")]
+        public EyeColor? EyeColor { get; private set; }
+
+        [SerializedAs("pid")]
+        public string? PassportId { get; private set; }
+
+        [SerializedAs("cid")]
+        public string? CountryId { get; private set; }
 
         private Passport() { }
 
@@ -50,49 +91,103 @@ namespace day_4
             string? s;
             int i;
 
-            if (dict.TryGetValue(nameof(byr), out s) && int.TryParse(s, out i))
-                passport.byr = i;
+            if (TryGetPropValue(dict, nameof(BirthYear), out s) && int.TryParse(s, out i))
+                passport.BirthYear = i;
 
-            if (dict.TryGetValue(nameof(iyr), out s) && int.TryParse(s, out i))
-                passport.iyr = i;
+            if (TryGetPropValue(dict, nameof(IssueYear), out s) && int.TryParse(s, out i))
+                passport.IssueYear = i;
 
-            if (dict.TryGetValue(nameof(eyr), out s) && int.TryParse(s, out i))
-                passport.eyr = i;
+            if (TryGetPropValue(dict, nameof(ExpirationYear), out s) && int.TryParse(s, out i))
+                passport.ExpirationYear = i;
 
-             //   hgt = ParseHeight(dict[nameof(hgt)]),
+            if (TryGetPropValue(dict, nameof(Height), out s))
+                passport.Height = ParseHeight(s);
 
-            //    hcl = dict[nameof(hcl)],
-            //    ecl = dict[nameof(ecl)],
-            //    pid = dict[nameof(pid)],
-            //    cid = dict[nameof(cid)]
-            //};
+            if (TryGetPropValue(dict, nameof(HairColor), out s))
+                passport.HairColor = ParseHairColor(s);
+
+            if (TryGetPropValue(dict, nameof(EyeColor), out s) &&
+                Enum.TryParse(s, out EyeColor eyeColor))
+            {
+                passport.EyeColor = eyeColor;
+            }
+
+            if (TryGetPropValue(dict, nameof(PassportId), out s))
+                passport.PassportId = s;
+
+            if (TryGetPropValue(dict, nameof(CountryId), out s))
+                passport.CountryId = s;
 
             return true;
         }
 
-        private static IHeight ParseHeight(string v)
+        private static bool TryGetPropValue(Dictionary<string, string> dict, string propertyName, [NotNullWhen(true)] out string? value)
         {
-            throw new NotImplementedException();
+            var serializedAs = typeof(Passport).GetProperty(propertyName)?.GetCustomAttribute<SerializedAsAttribute>()?.InternalName;
+
+            if (serializedAs == null)
+                throw new ArgumentException(null, nameof(propertyName));
+
+            return dict.TryGetValue(serializedAs, out value);
+        }
+
+        private static IHeight? ParseHeight(string v)
+        {
+            IHeight result;
+
+            int unitOffset;
+
+            unitOffset = v.IndexOf("cm");
+
+            if (unitOffset > 0)
+                result = new CmHeight();
+            else
+            {
+                unitOffset = v.IndexOf("in");
+
+                if (unitOffset < 0)
+                    return null;
+
+                result = new InHeight();
+            }
+
+            if (!int.TryParse(v[0..unitOffset], out var value))
+                return null;
+
+            result.Value = value;
+
+            return result;
         }
 
         public bool IsValid()
         {
-            if (!byr.HasValue ||
-                !iyr.HasValue ||
-                !eyr.HasValue ||
-                hgt == null ||
-                hcl == null ||
-                ecl == null ||
-                pid == null)
+            if (!BirthYear.HasValue ||
+                !IssueYear.HasValue ||
+                !ExpirationYear.HasValue ||
+                Height == null ||
+                HairColor == null ||
+                EyeColor == null ||
+                PassportId == null)
             {
                 return false;
             }
 
-            // cid is _not_ mandatory
+            // NOTE: cid is _not_ mandatory. Let's ignore it.
 
             // TODO: check ranges
 
             return true;
+        }
+
+        private static int? ParseHairColor(string v)
+        {
+            if (!v.StartsWith("#"))
+                return null;
+
+            if (v.Length != 7)
+                return null;
+
+            return Convert.ToInt32(v.Substring(1), 16);
         }
     }
 }
