@@ -30,6 +30,24 @@ namespace day_5
             var highestSeatID = seats.Max(s => s.SeatID);
 
             Console.WriteLine($"Hightest seat ID: {highestSeatID}");
+
+            var seatID = FindMySeat(seats);
+
+            Console.WriteLine($"My own seat ID: {seatID}");
+        }
+
+        private static int FindMySeat(List<ParsedSeat> seats)
+        {
+            var possibleSeatIDs = Enumerable.Range(0, MaxRow * 8 + MaxColumn);
+
+            var knownSeatIDs = seats.Select(s => s.SeatID).OrderBy(i => i);
+
+            var missingSeatIDs = possibleSeatIDs.Except(knownSeatIDs);
+
+            var seatIDsWithNeighbors = missingSeatIDs.Where(s => knownSeatIDs.Contains(s - 1)
+                                                                 && knownSeatIDs.Contains(s + 1));
+
+            return seatIDsWithNeighbors.First();
         }
 
         private static void VerifySampleResults()
