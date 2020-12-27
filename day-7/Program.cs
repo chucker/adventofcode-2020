@@ -29,13 +29,13 @@ namespace day_7
             }
         }
 
-        private static async Task<Dictionary<string, Rule>> ReadAndParseRules(string filename)
+        private static async Task<Dictionary<string, BagRule>> ReadAndParseRules(string filename)
         {
-            var result = new Dictionary<string, Rule>();
+            var result = new Dictionary<string, BagRule>();
 
             foreach (var item in await File.ReadAllLinesAsync(filename))
             {
-                if (Rule.TryParse(item, out var rule))
+                if (BagRule.TryParse(item, out var rule))
                     result[rule.BagType]=rule;
             }
 
@@ -43,12 +43,12 @@ namespace day_7
         }
     }
 
-    public record Rule(string BagType, string[] ContainedBagTypes)
+    public record BagRule(string BagType, ContainedBagRule[] ContainedBagRules)
     {
         private const string RuleRegex = @"(?<BagType>[a-z]+ [a-z]+ bags) contain (?<ContainedBagTypes>(\d [a-z]+ [a-z]+ bags?(, )?)+)\.";
         private const string RuleWithNoOtherBagsRegex = @"(?<BagType>[a-z]+ [a-z]+ bags) contain no other bags\.";
 
-        public static bool TryParse(string rawRule, [NotNullWhen(true)] out Rule? rule)
+        public static bool TryParse(string rawRule, [NotNullWhen(true)] out BagRule? rule)
         {
             rule = null;
 
@@ -71,29 +71,34 @@ namespace day_7
             if (hasOtherBags)
             {
                 var containedBagTypes = match.Groups["ContainedBagTypes"].Value
-                                             .Split(new string[] { ", " }, StringSplitOptions.None)
-                                             .Select(s => s.Replace("bags", "bag")); // normalize to singular
+                                             .Split(new string[] { ", " }, StringSplitOptions.None);
 
-                rule = new Rule(bagType, containedBagTypes.ToArray());
+                var parsedContainedBagTypes = new List<ContainedBagRule>();
+
+                foreach (var s in containedBagTypes)
+                {
+                    if (ContainedBagRule.TryParse(s, out var parsed))
+                        parsedContainedBagTypes.Add(parsed);
+                }
+
+                rule = new BagRule(bagType, parsedContainedBagTypes.ToArray());
             }
             else
             {
-                rule = new Rule(bagType, Array.Empty<string>());
+                rule = new BagRule(bagType, Array.Empty<ContainedBagRule>());
             }
 
             return true;
         }
 
-        public bool DoesRecursivelyContainOtherBagType(string otherBagType, Dictionary<string, Rule> allRules)
+        public bool DoesRecursivelyContainOtherBagType(string otherBagType, Dictionary<string, BagRule> allRules)
         {
-            if (ContainedBagTypes.Any(x => x.Substring(2) == otherBagType))
+            if (ContainedBagRules.Any(x => x.BagType == otherBagType))
                 return true;
 
-            foreach (var item in ContainedBagTypes)
+            foreach (var item in ContainedBagRules)
             {
-                // UGLY: we're (uncleanly) ignoring the counts here (for now)
-
-                if (!allRules.TryGetValue(item.Substring(2), out var containedRule))
+                if (!allRules.TryGetValue(item.BagType, out var containedRule))
                     throw new KeyNotFoundException($"Couldn't find rule for {item}");
 
                 if (containedRule.DoesRecursivelyContainOtherBagType(otherBagType, allRules))
@@ -101,6 +106,29 @@ namespace day_7
             }
 
             return false;
+        }
+    }
+
+    public record ContainedBagRule(int Amount, string BagType)
+    {
+        private const string RuleRegex = @"(?<Amount>\d+) (?<BagType>[a-z]+ [a-z]+ bags?)";
+
+        public static bool TryParse(string rawRule, [NotNullWhen(true)] out ContainedBagRule rule)
+        {
+            rule = null;
+
+            var match = Regex.Match(rawRule, RuleRegex);
+
+            if (!match.Success)
+                return false;
+
+            int amount = int.Parse(match.Groups["Amount"].Value);
+
+            string bagType = match.Groups["BagType"].Value.Replace("bags", "bag"); // normalize to singular
+
+            rule = new ContainedBagRule(amount, bagType);
+
+            return true;
         }
     }
 }
