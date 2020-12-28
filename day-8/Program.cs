@@ -14,7 +14,12 @@ namespace day_8
 
             int accumulator = 0;
 
-            instructions[0].Visit(ref accumulator, 1, instructions);
+            var nextInstruction = instructions[0];
+
+            while (nextInstruction != null)
+            {
+                nextInstruction = nextInstruction.Visit(ref accumulator, maxVisitCount: 1, instructions);
+            }
         }
 
         private static async Task<List<Instruction>> ReadInstructions(string filename)
@@ -59,11 +64,12 @@ namespace day_8
     {
         public int VisitCount { get; private set; } = 0;
 
-        public void Visit(ref int accumulator, int maxVisitCount, List<Instruction> allInstructions)
+        public Instruction Visit(ref int accumulator, int maxVisitCount, List<Instruction> allInstructions)
         {
-            // BUG: this isn't going to work
+            Console.WriteLine($"Visiting line {Line}. Accumulator is currently {accumulator}.");
+
             if (VisitCount >= maxVisitCount)
-                return;
+                return null;
 
             VisitCount++;
 
@@ -86,7 +92,7 @@ namespace day_8
                     break;
             }
 
-            allInstructions[nextIndex].Visit(ref accumulator, maxVisitCount, allInstructions);
+            return allInstructions[nextIndex];
         }
     }
 }
